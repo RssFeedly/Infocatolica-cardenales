@@ -1,8 +1,8 @@
-from datetime import datetime, timezone
-import os
+from datetime import datetime, timedelta, timezone
 from urllib.parse import urljoin
 from bs4 import BeautifulSoup
 from feedgen.feed import FeedGenerator
+import os
 import requests
 
 urls = [
@@ -22,13 +22,14 @@ headers = {
 
 fg = FeedGenerator()
 fg.title("RSS Infocatolica - Autores Específicos")
-fg.link(href="https://www.infocatolica.com")
+fg.link(href="https://www.infocatolica.com", rel="alternate")
 fg.description(
     "Feed personalizado generado automáticamente con GitHub Actions"
 )
 
 print("Iniciando scrap de URLs...")
 total_entries = 0
+base_time = datetime.now(timezone.utc)
 
 for url in urls:
   print(f"Leyendo {url}")
@@ -46,7 +47,7 @@ for url in urls:
     print(f"No se encontraron titulares en {url}")
     continue
 
-  for a in articles:
+  for index, a in enumerate(articles):
     title = a.get_text(strip=True)
     link = a.get("href")
     if title and link:
@@ -56,12 +57,19 @@ for url in urls:
       fe.title(title)
       fe.link(href=absolute_link)
       fe.description(f"Artículo de InfoCatólica: {title}")
-      fe.pubDate(datetime.now(timezone.utc))
+
+      # Guid único obligatorio para que Feedly no descarte duplicados o errores
+      fe.guid(absolute_link, permalink=True)
+
+      # Desplazamos los segundos hacia atrás de forma ficticia
+      # para que Feedly no crea que se publicaron todos al mismo milisegundo
+      article_time = base_time - timedelta(minutes=total_entries)
+      fe.pubDate(article_time)
 
       total_entries += 1
 
 rss_file_path = "rss.xml"
-fg.rss_file(rss_file_path)
+fg.rss_file(rss_file_path, encoding="UTF-8")
 print(f"RSS generado en {rss_file_path} con {total_entries} entradas")
 
 if os.path.exists(rss_file_path):
