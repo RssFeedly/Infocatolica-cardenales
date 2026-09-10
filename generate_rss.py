@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta, timezone
 from urllib.parse import urljoin
 from bs4 import BeautifulSoup
 from feedgen.feed import FeedGenerator
@@ -29,6 +30,8 @@ fg.language("es")
 
 print("Iniciando scrap de URLs...")
 total_entries = 0
+# Tomamos la hora actual exacta en UTC asegurando que sea un tiempo pasado válido
+base_time = datetime.now(timezone.utc)
 
 for url in urls:
   print(f"Leyendo {url}")
@@ -56,12 +59,11 @@ for url in urls:
       fe.title(title)
       fe.link(href=absolute_link)
       fe.description(f"Artículo escrito en InfoCatólica: {title}")
-
-      # Guid único basado en el enlace para evitar duplicados
       fe.guid(absolute_link, permalink=True)
 
-      # Nota: Omitimos fe.pubDate() para que los lectores
-      # reconozcan las entradas como vigentes sin conflictos de zona horaria o fechas futuras.
+      # Asignamos una fecha real en el pasado reciente (restando horas/minutos acumulados)
+      article_time = base_time - timedelta(hours=1, minutes=total_entries * 10)
+      fe.pubDate(article_time)
 
       total_entries += 1
 
