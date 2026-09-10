@@ -1,7 +1,8 @@
+from datetime import datetime, timezone
+import os
 from urllib.parse import urljoin
 from bs4 import BeautifulSoup
 from feedgen.feed import FeedGenerator
-import os
 import requests
 
 urls = [
@@ -12,7 +13,6 @@ urls = [
     "https://www.infocatolica.com/?t=autores&a=Monse%F1or+H%E9ctor+Aguer",
 ]
 
-# Cabecera para simular un navegador real y evitar bloqueos
 headers = {
     "User-Agent": (
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
@@ -40,8 +40,6 @@ for url in urls:
     continue
 
   soup = BeautifulSoup(r.content, "html.parser")
-
-  # Ampliado a h2 y h3 por si la estructura del autor varía ligeramente
   articles = soup.select("h2 a, h3 a")[:5]
 
   if not articles:
@@ -52,12 +50,14 @@ for url in urls:
     title = a.get_text(strip=True)
     link = a.get("href")
     if title and link:
-      # Convierte enlaces relativos (ej. ?id=123) en absolutos
       absolute_link = urljoin("https://infocatolica.com", link)
 
       fe = fg.add_entry()
       fe.title(title)
       fe.link(href=absolute_link)
+      fe.description(f"Artículo de InfoCatólica: {title}")
+      fe.pubDate(datetime.now(timezone.utc))
+
       total_entries += 1
 
 rss_file_path = "rss.xml"
