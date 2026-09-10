@@ -24,8 +24,9 @@ fg = FeedGenerator()
 fg.title("RSS Infocatolica - Autores Específicos")
 fg.link(href="https://www.infocatolica.com", rel="alternate")
 fg.description(
-    "Feed personalizado generado automáticamente con GitHub Actions"
+    "Feed personalizado de autores específicos generado con GitHub Actions"
 )
+fg.language("es")
 
 print("Iniciando scrap de URLs...")
 total_entries = 0
@@ -47,7 +48,7 @@ for url in urls:
     print(f"No se encontraron titulares en {url}")
     continue
 
-  for index, a in enumerate(articles):
+  for a in articles:
     title = a.get_text(strip=True)
     link = a.get("href")
     if title and link:
@@ -56,14 +57,13 @@ for url in urls:
       fe = fg.add_entry()
       fe.title(title)
       fe.link(href=absolute_link)
-      fe.description(f"Artículo de InfoCatólica: {title}")
+      fe.description(f"Artículo escrito en InfoCatólica: {title}")
 
-      # Guid único obligatorio para que Feedly no descarte duplicados o errores
+      # Usamos un identificador único basado en el enlace pero limpio
       fe.guid(absolute_link, permalink=True)
 
-      # Desplazamos los segundos hacia atrás de forma ficticia
-      # para que Feedly no crea que se publicaron todos al mismo milisegundo
-      article_time = base_time - timedelta(minutes=total_entries)
+      # Asignamos fechas escalonadas en orden cronológico hacia atrás
+      article_time = base_time - timedelta(minutes=total_entries + 1)
       fe.pubDate(article_time)
 
       total_entries += 1
